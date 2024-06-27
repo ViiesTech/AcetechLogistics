@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -24,25 +25,28 @@ import {
 import BtnComp from '../../components/BtnComp';
 import images from '../../assets/images';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-
-const CheckPin = ({navigation, route}) => {
+import Toast from 'react-native-toast-message';
+import { baseUrl } from '../../assets/utils/baseUrl';
+const CheckPin = ({ navigation, route }) => {
   const [count, setCount] = useState(59);
   const [value, setValue] = useState('');
-
+  const [loading, setIsLoading] = useState(false)
+  const { id } = route.params;
+  const userId = id || null;
   const CELL_COUNT = 5;
-  const ref = useBlurOnFulfill({value, cellCount: CELL_COUNT});
+  const ref = useBlurOnFulfill({ value, cellCount: CELL_COUNT });
   const [props, getCellOnLayoutHandler] = useClearByFocusCell({
     value,
     setValue,
   });
 
-  const renderCell = ({index, symbol, isFocused}) => {
+  const renderCell = ({ index, symbol, isFocused }) => {
     let textChild = null;
     if (symbol) {
       textChild = (
         <MaskSymbol
           maskSymbol="*"
-          isLastFilledCell={isLastFilledCell({index, value})}>
+          isLastFilledCell={isLastFilledCell({ index, value })}>
           {symbol}
         </MaskSymbol>
       );
@@ -59,6 +63,12 @@ const CheckPin = ({navigation, route}) => {
     );
   };
 
+  const showToast = (type, message) => {
+    Toast.show({
+      type: type,
+      text1: message,
+    });
+  }
   useEffect(() => {
     if (count !== 0) {
       setTimeout(() => {
@@ -67,9 +77,58 @@ const CheckPin = ({navigation, route}) => {
     }
   }, [count]);
 
+  const handleVerification = () => {
+    setIsLoading(true)
+    console.log("userId", userId)
+    console.log("value", value)
+
+    let data = JSON.stringify({
+      "id": userId,
+      "otp": value
+    });
+
+    let config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: `${baseUrl}/verify-otp`,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data: data
+    };
+    if (value) {
+      axios.request(config)
+        .then((response) => {
+          setIsLoading(false)
+          console.log(JSON.stringify(response.data));
+          if (response.data.success == 'true') {
+            showToast("success", response.data.message)
+            setTimeout(() => {
+              navigation.navigate('Verified', { id: id })
+            }, 1000)
+          } else {
+            showToast("error", response.data.message)
+          }
+        })
+        .catch((error) => {
+          setIsLoading(false)
+          showToast("error", error.message)
+          console.log("error", error);
+        });
+    } else {
+      setIsLoading(false)
+      showToast("error", 'Plz Fill The Required Fields')
+    }
+
+  }
+
+  const resendCode = () => {
+
+  }
+
   return (
-    <View style={{flex: 1, padding: 20, backgroundColor: colors.secondary}}>
-      <ScrollView contentContainerStyle={{flexGrow: 1}}>
+    <View style={{ flex: 1, padding: 20, backgroundColor: colors.secondary }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View
           style={{
             width: wp('88%'),
@@ -84,7 +143,7 @@ const CheckPin = ({navigation, route}) => {
         </View>
         <Image
           source={images.logo}
-          style={{marginBottom: hp('3%'), alignSelf: 'center'}}
+          style={{ marginBottom: hp('3%'), alignSelf: 'center' }}
         />
 
         <Text
@@ -98,7 +157,7 @@ const CheckPin = ({navigation, route}) => {
           Email Verification
         </Text>
 
-        <Text style={{color: 'black', fontSize: hp('1.6%'), alignSelf: 'center', width: wp('84%')}}>
+        <Text style={{ color: 'black', fontSize: hp('1.6%'), alignSelf: 'center', width: wp('84%') }}>
           An email has been sent to your registered email address. Enter the
           verification code below:
         </Text>
@@ -114,7 +173,7 @@ const CheckPin = ({navigation, route}) => {
           textContentType="oneTimeCode"
           renderCell={renderCell}
         />
-        <Text style={{color: colors.themeBlack, alignSelf: 'center'}}>
+        <Text style={{ color: colors.themeBlack, alignSelf: 'center' }}>
           00 : {count}
         </Text>
 
@@ -129,7 +188,8 @@ const CheckPin = ({navigation, route}) => {
 
         <TouchableOpacity
           disabled={count > 0}
-          style={{alignSelf: 'center', padding: 5, marginTop: 7}}>
+          onPress={resendCode}
+          style={{ alignSelf: 'center', padding: 5, marginTop: 7 }}>
           <Text
             style={{
               alignSelf: 'center',
@@ -143,9 +203,7 @@ const CheckPin = ({navigation, route}) => {
           </Text>
         </TouchableOpacity>
 
-        {/* {value.length === 4 ? ( */}
-          <BtnComp btnText={'Verify'} onPress={() => navigation.navigate('Verified')} style={{marginTop: 30, backgroundColor: colors.primary}} />
-        {/* ) : null} */}
+        <BtnComp padding={1} height={50} btnText={loading ? (<ActivityIndicator size={'large'} color={'white'} />) : 'Verify'} onPress={(handleVerification)} style={{ marginTop: 30, backgroundColor: colors.primary }} />
       </ScrollView>
     </View>
   );
@@ -173,18 +231,16 @@ const styles = StyleSheet.create({
   },
   codeFieldRoot: {
     marginTop: 40,
-    padding: 20,
   },
   cell: {
     width: 60,
     height: 60,
-    lineHeight: 40,
     fontSize: 34,
     borderWidth: 2,
     borderColor: 'black',
     textAlign: 'center',
     borderRadius: 15,
-    padding: 15,
+    paddingVertical: 10,
     color: 'black',
   },
   focusCell: {
