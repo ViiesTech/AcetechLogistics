@@ -14,6 +14,7 @@ import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
 import CustomPopup from '../../components/CustomPopup';
 import { baseUrl } from '../../assets/utils/baseUrl';
+
 const TrackerScreen = ({ navigation }) => {
   const [longitude, setLongitude] = useState(null);
   const [latitude, setLatitude] = useState(null);
@@ -29,13 +30,15 @@ const TrackerScreen = ({ navigation }) => {
 
   Geolocation.getCurrentPosition(
     position => {
-      setLongitude(position.coords.longitude)
-      setLatitude(position.coords.latitude)
+      console.log('coordssss', position); // Log the entire position object
+      setLongitude(position.coords.longitude); // Set the longitude
+      setLatitude(position.coords.latitude); // Set the latitude
     },
     error => {
-      console.error('Error getting location:', error);
+      console.error('Error getting location:', error); // Log any errors that occur
     }
   );
+  console.log('long',longitude,'lat',latitude)
 
   const showToast = (type, message) => {
     Toast.show({
@@ -117,7 +120,7 @@ const TrackerScreen = ({ navigation }) => {
       .catch((error) => {
 
         setIsLoading(false)
-        showToast('error', error)
+        showToast('error', error.message)
 
         console.log(error);
       });
@@ -234,7 +237,7 @@ const TrackerScreen = ({ navigation }) => {
       })
       .catch((error) => {
         setIsLoading(false)
-        showToast('error', error)
+        showToast('error', error.message)
 
         console.log(error);
       });

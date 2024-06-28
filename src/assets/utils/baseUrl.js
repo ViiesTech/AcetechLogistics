@@ -1,1 +1,1 @@
-export const baseUrl = 'https://appsdemo.pro/AceTech/user'
+export const baseUrl = 'https://www.yourappdemo.com/AceTech/user'
