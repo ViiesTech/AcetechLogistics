@@ -5,6 +5,7 @@ import { Provider } from 'react-redux'
 import { persistor, store } from './src/redux/store'
 import Toast from 'react-native-toast-message'
 import { PersistGate } from 'redux-persist/integration/react'
+import AuthStack from './src/routes/AuthStack'
 
 const App = () => {
   return (
